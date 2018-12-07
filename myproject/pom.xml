@@ -15,6 +15,7 @@
 		<module>config-server</module>
 		<module>discovery-eureka</module>
 		<module>service1</module>
+		<module>gateway</module>
 	</modules>
 
 	<properties>
