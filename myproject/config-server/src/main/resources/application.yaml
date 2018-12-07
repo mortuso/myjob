@@ -9,8 +9,8 @@ spring:
       server:
         git:
           uri: https://github.com/mortuso/myjob
-          searchPaths: config-server
-          username: massimilianoortuso@yahoo.it
+          searchPaths: configuration
+          username: mortuso
           password: ashita19.sk86roland
           cloneOnStart: true
 
