@@ -22,27 +22,10 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>1.8</java.version>
 		<spring-cloud.version>Finchley.RELEASE</spring-cloud.version>
-		<sonar.exclusions>**/com/aptar/mes/core/production/dto/sap/**</sonar.exclusions>
+		<sonar.exclusions>**/com/example/folder/**</sonar.exclusions>
 		<sonar.coverage.exclusions>
-			**/com/aptar/mes/*,			
-			**/com/aptar/mes/gateway/**, 
-			**/com/aptar/mes/common/**,
-			**/com/aptar/mes/auth/config/**,
-			**/com/aptar/mes/auth/controller/**,
-			**/com/aptar/mes/auth/repository/**,
-			**/com/aptar/mes/auth/service/dto/**,
-			**/com/aptar/mes/core/production/vo/db/entity/**,
-			**/com/aptar/mes/core/*,
-			**/com/aptar/mes/core/config/**,
-			**/com/aptar/mes/core/general/**,			
-			**/com/aptar/mes/core/**/application/**,
-			**/com/aptar/mes/core/**/controller/**,
-			**/com/aptar/mes/core/**/dao/**,
-			**/com/aptar/mes/core/**/messaging/**,
-			**/com/aptar/mes/core/**/vo/**,
-			**/com/aptar/mes/core/**/model/**,
-			**/com/aptar/mes/core/**/event/**,
-			**/com/aptar/mes/core/masterdata/**
+			**/com/example/folder/*,			
+			**/com/example/folder2/**
 		</sonar.coverage.exclusions>
 	</properties>
 
