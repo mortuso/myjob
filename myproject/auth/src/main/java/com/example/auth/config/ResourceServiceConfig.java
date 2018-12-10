@@ -14,12 +14,6 @@ import org.springframework.security.oauth2.provider.token.ResourceServerTokenSer
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.access.AccessDeniedHandler;
 
-/**
- *
- * @author AFIORE
- * Created on 2018-05-30
- */
-
 @Configuration
 @EnableResourceServer
 public class ResourceServiceConfig extends ResourceServerConfigurerAdapter {
