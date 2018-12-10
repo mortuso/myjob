@@ -16,9 +16,10 @@
 7. Archaius 
 8. Spring Cloud Task
 
-9. Spring Cloud CLI
-10.Spring Cloud Data Flow
-11.Spring Cloud Vault
-12.Spring Cloud Contract
-13.Spring Cloud App Starter
-14.Spring Cloud Consul
+
+1. Spring Cloud CLI
+2. Spring Cloud Data Flow
+3. Spring Cloud Vault
+4. Spring Cloud Contract
+5. Spring Cloud App Starter
+6. Spring Cloud Consul
