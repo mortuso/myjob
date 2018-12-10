@@ -7,12 +7,12 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class TestController {
+public class FeignClientController {
 	
 	@GetMapping(value="/test", produces=MediaType.APPLICATION_JSON_VALUE)
 	@ResponseStatus(value=HttpStatus.OK)
 	 public String test() {
-		 return "service 2 is up";
+		 return "system is up";
 	 }
 
 }
