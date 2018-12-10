@@ -7,24 +7,18 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.DTO.BookDTO;
-import com.example.demo.service.TestService;
+import com.example.demo.DTO.TestFeignDTO;
+import com.example.demo.service.TestFeignService;
 
 @RestController
-public class TestController {
+public class TestFeignController {
 	
 	@Autowired
-	TestService testService;
+	TestFeignService testService;
 	
 	@GetMapping(value="/testFeign", produces=MediaType.APPLICATION_JSON_VALUE)
 	@ResponseStatus(value=HttpStatus.OK)
-	 public BookDTO testFeign() {
-		 return new BookDTO(testService.useFeignClient());
-	 }
-	
-	@GetMapping(value="/up", produces=MediaType.APPLICATION_JSON_VALUE)
-	@ResponseStatus(value=HttpStatus.OK)
-	 public String test() {
-		 return "contoller ok";
+	 public TestFeignDTO testFeign() {
+		 return new TestFeignDTO(testService.useFeignClient());
 	 }
 }
