@@ -17,8 +17,8 @@ import lombok.Setter;
  * 
  */
 @Entity
-@Table(name="oauth_user")
-@NamedQuery(name="OAuthUserEntity.findAll", query="SELECT o FROM OAuthUserEntity o")
+@Table(name="oauth_users")
+//@NamedQuery(name="OAuthUserEntity.findAll", query="SELECT o FROM OAuthUserEntity o")
 @Getter @Setter @NoArgsConstructor
 public class OAuthUserEntity implements Serializable {
 	private static final long serialVersionUID = 1L;

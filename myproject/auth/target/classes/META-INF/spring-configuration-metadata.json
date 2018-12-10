@@ -9,7 +9,6 @@
     {
       "sourceType": "com.example.auth.config.SecurityConfigProperties",
       "name": "security.jwt",
-      "sourceMethod": "public com.example.auth.config.SecurityConfigProperties.Jwt getJwt() ",
       "type": "com.example.auth.config.SecurityConfigProperties$Jwt"
     }
   ],
@@ -21,22 +20,7 @@
     },
     {
       "sourceType": "com.example.auth.config.SecurityConfigProperties$Jwt",
-      "name": "security.jwt.client-id",
-      "type": "java.lang.String"
-    },
-    {
-      "sourceType": "com.example.auth.config.SecurityConfigProperties$Jwt",
       "name": "security.jwt.client-secret",
-      "type": "java.lang.String"
-    },
-    {
-      "sourceType": "com.example.auth.config.SecurityConfigProperties$Jwt",
-      "name": "security.jwt.client-secret",
-      "type": "java.lang.String"
-    },
-    {
-      "sourceType": "com.example.auth.config.SecurityConfigProperties$Jwt",
-      "name": "security.jwt.grant-type",
       "type": "java.lang.String"
     },
     {
@@ -51,22 +35,7 @@
     },
     {
       "sourceType": "com.example.auth.config.SecurityConfigProperties$Jwt",
-      "name": "security.jwt.resource-ids",
-      "type": "java.lang.String"
-    },
-    {
-      "sourceType": "com.example.auth.config.SecurityConfigProperties$Jwt",
       "name": "security.jwt.scope-read",
-      "type": "java.lang.String"
-    },
-    {
-      "sourceType": "com.example.auth.config.SecurityConfigProperties$Jwt",
-      "name": "security.jwt.scope-read",
-      "type": "java.lang.String"
-    },
-    {
-      "sourceType": "com.example.auth.config.SecurityConfigProperties$Jwt",
-      "name": "security.jwt.scope-write",
       "type": "java.lang.String"
     },
     {
@@ -81,16 +50,7 @@
     },
     {
       "sourceType": "com.example.auth.config.SecurityConfigProperties$Jwt",
-      "name": "security.jwt.signing-key",
-      "type": "java.lang.String"
-    },
-    {
-      "sourceType": "com.example.auth.config.SecurityConfigProperties$Jwt",
-      "name": "security.jwt.token-validity-seconds",
-      "type": "java.lang.Integer"
-    },
-    {
-      "sourceType": "com.example.auth.config.SecurityConfigProperties$Jwt",
+      "defaultValue": 0,
       "name": "security.jwt.token-validity-seconds",
       "type": "java.lang.Integer"
     },

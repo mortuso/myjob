@@ -24,8 +24,8 @@ public class ResourceServiceConfig extends ResourceServerConfigurerAdapter {
     @Autowired
     private ResourceServerTokenServices tokenServices;
     
-    @Autowired 
-    private WebResponseExceptionTranslator exceptionTranslator;
+//    @Autowired 
+//    private WebResponseExceptionTranslator exceptionTranslator;
 	
     /*
      * Resource server oauth configuration
@@ -54,14 +54,14 @@ public class ResourceServiceConfig extends ResourceServerConfigurerAdapter {
     @Bean
     public AccessDeniedHandler accessDeniedHandler() {
         final OAuth2AccessDeniedHandler handler = new OAuth2AccessDeniedHandler();
-        handler.setExceptionTranslator(exceptionTranslator);
+//        handler.setExceptionTranslator(exceptionTranslator);
         return handler;
     }
     
     @Bean
     public AuthenticationEntryPoint authenticationEntryPoint() {
         final OAuth2AuthenticationEntryPoint entryPoint = new OAuth2AuthenticationEntryPoint();
-        entryPoint.setExceptionTranslator(exceptionTranslator);
+//        entryPoint.setExceptionTranslator(exceptionTranslator);
         return entryPoint;
     }
 
