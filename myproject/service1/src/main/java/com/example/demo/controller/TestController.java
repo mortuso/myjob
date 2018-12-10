@@ -21,4 +21,10 @@ public class TestController {
 	 public BookDTO testFeign() {
 		 return new BookDTO(testService.useFeignClient());
 	 }
+	
+	@GetMapping(value="/up", produces=MediaType.APPLICATION_JSON_VALUE)
+	@ResponseStatus(value=HttpStatus.OK)
+	 public String test() {
+		 return "contoller ok";
+	 }
 }

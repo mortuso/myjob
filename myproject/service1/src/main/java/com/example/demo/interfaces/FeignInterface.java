@@ -8,9 +8,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 import com.example.demo.model.BookRest;
 
-@FeignClient("Service2Books")
+@FeignClient("service2")
 public interface FeignInterface {
 	
-	@RequestMapping(method = RequestMethod.GET, value = "/service2/books", consumes = "application/json")
+	@RequestMapping(method = RequestMethod.GET, value = "/service2/books")
 	public Collection<BookRest> getBooks();
 }

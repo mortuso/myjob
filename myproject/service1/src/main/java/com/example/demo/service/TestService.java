@@ -16,7 +16,8 @@ public class TestService {
 	
 	
 	public Collection<BookRest> useFeignClient() {
-		return feignInterface.getBooks();
+		Collection<BookRest> bookRests = feignInterface.getBooks();
+		return bookRests;
 	}
 
 }
