@@ -9,14 +9,12 @@ import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.auth.controller.response.PrivilegesResponse;
 import com.example.auth.service.UserDetailsServiceImpl;
 import com.example.auth.service.dto.ChangeStationDTO;
 
@@ -56,23 +54,4 @@ public class UserController {
 		return service.changeStation(request, oAuth2Authentication, principal, authentication.getAuthorities());	
 	}
 	
-	
-	@ApiOperation(value = "Privileges")
-	@ApiResponses(value = {
-			@ApiResponse(code = 200, message = "Success"),
-			@ApiResponse(code = 400, message = "Bad Request"),
-			@ApiResponse(code = 401, message = "Unauthorized"),
-			@ApiResponse(code = 403, message = "Forbidden"),
-			@ApiResponse(code = 404, message = "Not Found"),
-			@ApiResponse(code = 500, message = "Internal Server Error")
-	})
-	
-	@GetMapping(value="/privileges", produces=MediaType.APPLICATION_JSON_VALUE)
-	@ResponseStatus(value=HttpStatus.OK)
-	public PrivilegesResponse privileges(
-			Principal principal, Authentication authentication)
-	{
-		log.log(Level.FINE, "Getting privileges for user {0}", principal.getName());
-		return new PrivilegesResponse(authentication.getAuthorities());
-	}
 }
