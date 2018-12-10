@@ -17,6 +17,7 @@
 		<module>service1</module>
 		<module>gateway</module>
 		<module>service2</module>
+		<module>auth</module>
 	</modules>
 
 	<properties>

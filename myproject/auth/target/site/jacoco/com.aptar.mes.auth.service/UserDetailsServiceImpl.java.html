@@ -1,0 +1,397 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserDetailsServiceImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mes-auth</a> &gt; <a href="index.source.html" class="el_package">com.aptar.mes.auth.service</a> &gt; <span class="el_source">UserDetailsServiceImpl.java</span></div><h1>UserDetailsServiceImpl.java</h1><pre class="source lang-java linenums">package com.aptar.mes.auth.service;
+
+import java.security.Principal;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.logging.Level;
+
+import javax.transaction.Transactional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AccountExpiredException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.common.DefaultOAuth2AccessToken;
+import org.springframework.security.oauth2.common.OAuth2AccessToken;
+import org.springframework.security.oauth2.provider.OAuth2Authentication;
+import org.springframework.security.oauth2.provider.OAuth2Request;
+import org.springframework.security.oauth2.provider.token.DefaultTokenServices;
+import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
+import org.springframework.stereotype.Service;
+
+import com.aptar.mes.auth.config.SecurityConfigProperties;
+import com.aptar.mes.auth.repository.ChangeHistoryRepository;
+import com.aptar.mes.auth.repository.OAuthUserRepository;
+import com.aptar.mes.auth.service.dto.ChangePasswordDTO;
+import com.aptar.mes.auth.service.dto.ChangeStationDTO;
+import com.aptar.mes.auth.service.dto.JwtUserCredential;
+import com.aptar.mes.auth.service.dto.JwtUserDates;
+import com.aptar.mes.auth.service.dto.JwtUser;
+import com.aptar.mes.common.exception.ExceptionInfo;
+import com.aptar.mes.common.exception.MesApplicationException;
+import com.aptar.mes.common.util.GMTDateTime;
+import com.aptar.mes.core.general.db.entity.ChangeHistoryEntity;
+import com.aptar.mes.core.general.db.entity.OAuthGroupEntity;
+import com.aptar.mes.core.general.db.entity.OAuthUserEntity;
+import com.aptar.mes.core.general.db.entity.PrivilegeEntity;
+import com.aptar.mes.core.general.db.entity.StationEntity;
+
+import lombok.Getter;
+import lombok.extern.java.Log;
+
+/**
+ * This class implements the authentication logic
+ * 
+ * @author AFIORE
+ *
+ */
+@Service
+<span class="fc" id="L63">@Log</span>
+<span class="fc" id="L64">public class UserDetailsServiceImpl implements UserDetailsService {</span>
+
+	@Autowired
+	private OAuthUserRepository oAuthUserRepository;
+
+	@Autowired
+	private ChangeHistoryRepository changeHistoryRepository;
+
+	@Autowired
+	private SecurityConfigProperties configProperties;
+
+	@Autowired
+	private DefaultTokenServices tokenServices;
+
+	@Autowired
+	private JwtAccessTokenConverter accessTokenConverter;
+
+	/**
+	 * min 8, max 12, 1 upper case, 1 lower case, 1 digit
+	 */
+	private static final String PSW_REGEX = &quot;^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,12}&quot;;
+
+	/**
+	 * Number of days before expiration
+	 */
+	private static final int DAYS_BEFORE_EXPIRATION_WARNING = 3;
+
+<span class="fc" id="L91">	private enum DateExpirationStatus {</span>
+<span class="fc" id="L92">		VALID, WARNING, EXPIRED</span>
+	}
+
+	/**
+	 * Locate the user based on the username
+	 * 
+	 * @param username
+	 * @return a fully populated user record (never null)
+	 */
+	@Override
+	public UserDetails loadUserByUsername(String username) {
+<span class="fc" id="L103">		log.fine(&quot;LoadUserByUsername&quot;);</span>
+
+<span class="fc" id="L105">		OAuthUserEntity user = oAuthUserRepository.findByUsername(username);</span>
+
+<span class="fc" id="L107">		List&lt;GrantedAuthority&gt; authorities = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L108">		boolean isUserExpiring = false;</span>
+<span class="fc" id="L109">		boolean isPasswordExpiring = false;</span>
+
+<span class="fc bfc" id="L111" title="All 2 branches covered.">		if (user != null) {</span>
+<span class="fc" id="L112">			log.fine(&quot;User found&quot;);</span>
+
+<span class="fc" id="L114">			addUserPrivileges(user, authorities);</span>
+
+			// validate user expiring
+<span class="pc bpc" id="L117" title="1 of 2 branches missed.">			if (user.getUserExpDate() != null) {</span>
+<span class="pc bpc" id="L118" title="2 of 4 branches missed.">				switch (checkExpirationDate(user.getUserExpDate())) {</span>
+				case EXPIRED:
+<span class="fc" id="L120">					throw new AccountExpiredException(&quot;User account has expired&quot;);</span>
+				case WARNING:
+<span class="nc" id="L122">					isUserExpiring = true;</span>
+<span class="nc" id="L123">					break;</span>
+				case VALID:
+<span class="fc" id="L125">					break;</span>
+				default:
+					break;
+
+				}
+			}
+
+			// validate password expiring
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">			if (user.getPasswordExpDate() != null) {</span>
+<span class="pc bpc" id="L134" title="2 of 4 branches missed.">				switch (checkExpirationDate(user.getPasswordExpDate())) {</span>
+				case EXPIRED:
+<span class="fc" id="L136">					throw new AccountExpiredException(&quot;Password has expired&quot;);</span>
+				case WARNING:
+<span class="nc" id="L138">					isPasswordExpiring = true;</span>
+<span class="nc" id="L139">					break;</span>
+				case VALID:
+<span class="fc" id="L141">					log.fine(&quot;Password expiration date is valid&quot;);</span>
+<span class="fc" id="L142">					break;</span>
+				default:
+<span class="nc" id="L144">					break;</span>
+
+				}
+			}
+
+		} else {
+<span class="fc" id="L150">			throw new UsernameNotFoundException(String.format(&quot;No user found with username '%s'.&quot;, username));</span>
+		}
+
+<span class="fc" id="L153">		return new JwtUser(new JwtUserCredential(user.getUsername(), user.getPassword()),</span>
+<span class="pc bpc" id="L154" title="1 of 2 branches missed.">				new JwtUserDates(user.getUserExpDate(), user.getPasswordExpDate()), authorities, !user.getIsDisabled(),</span>
+				isUserExpiring, isPasswordExpiring);
+	}
+
+	
+	/**
+	 * Add privileges about change password and change station
+	 * 
+	 * @param user
+	 * @param authorities
+	 */
+	private void addUserPrivileges(OAuthUserEntity user, List&lt;GrantedAuthority&gt; authorities) {
+
+<span class="pc bpc" id="L167" title="3 of 4 branches missed.">		if (user.getIsEnabledChangePassword() != null &amp;&amp; user.getIsEnabledChangePassword())</span>
+<span class="nc" id="L168">			authorities.add(UserAuthorities.CHANGE_PASSWORD_AUTH.getGrantedAuthority());</span>
+<span class="pc bpc" id="L169" title="3 of 4 branches missed.">		if (user.getIsEnabledChangeStation() != null &amp;&amp; user.getIsEnabledChangeStation())</span>
+<span class="nc" id="L170">			authorities.add(UserAuthorities.CHANGE_STATIONS_AUTH.getGrantedAuthority());</span>
+
+<span class="fc" id="L172">	}</span>
+
+	/**
+	 * Check if user/password is expired or is expiring in next 3 days
+	 * 
+	 * @param date
+	 *            expiration date
+	 * @return EXPIRED , WARNING or VALID
+	 */
+	private DateExpirationStatus checkExpirationDate(Date date) {
+<span class="fc" id="L182">		LocalDate today = GMTDateTime.today();</span>
+<span class="fc" id="L183">		LocalDate dateExp = GMTDateTime.convertToLocalDate(date);</span>
+<span class="fc bfc" id="L184" title="All 2 branches covered.">		if (!dateExp.isBefore(today)) {</span>
+
+<span class="pc bpc" id="L186" title="1 of 2 branches missed.">			if (dateExp.isBefore(today.plusDays(DAYS_BEFORE_EXPIRATION_WARNING))) {</span>
+<span class="nc" id="L187">				return DateExpirationStatus.WARNING;</span>
+			}
+
+<span class="fc" id="L190">			return DateExpirationStatus.VALID;</span>
+		}
+<span class="fc" id="L192">		return DateExpirationStatus.EXPIRED;</span>
+	}
+
+	/**
+	 * Change Station and Plant of the user and if it's possible, set default
+	 * Station and default Plant
+	 * 
+	 * @param changeStationDTO
+	 * @param oAuth2Authentication
+	 * @param principal
+	 * @param authorities
+	 * @return new token
+	 */
+
+	@Transactional
+	public OAuth2AccessToken changeStation(ChangeStationDTO changeStationDTO, OAuth2Authentication oAuth2Authentication,
+			Principal principal, Collection&lt;? extends GrantedAuthority&gt; authorities) {
+
+<span class="fc" id="L210">		OAuthUserEntity user = oAuthUserRepository.findByUsername(principal.getName());</span>
+<span class="fc" id="L211">		log.fine(&quot;Found user on DB&quot;);</span>
+
+<span class="pc bpc" id="L213" title="1 of 2 branches missed.">		boolean isEnabledChangeStation = authorities != null</span>
+<span class="fc bfc" id="L214" title="All 2 branches covered.">				&amp;&amp; authorities.contains(UserAuthorities.CHANGE_STATIONS_AUTH.getGrantedAuthority());</span>
+
+		// check if user is enabled to change Station
+<span class="pc bpc" id="L217" title="1 of 4 branches missed.">		if (!isEnabledChangeStation &amp;&amp; user.getStation() != null</span>
+<span class="pc bpc" id="L218" title="1 of 2 branches missed.">				&amp;&amp; changeStationDTO.getStation() != user.getStation().getStationPk()) {</span>
+<span class="fc" id="L219">			throw MesApplicationException.builder()</span>
+<span class="fc" id="L220">					.exceptionInfo(</span>
+<span class="fc" id="L221">							UserDetailsServiceErrors.LoginErrors.USER_NOT_ENABLED_CHANGE_STATION.getExceptionInfo())</span>
+<span class="fc" id="L222">					.build();</span>
+		}
+
+		// set new default Plant
+<span class="fc" id="L226">		user.setPlantId(changeStationDTO.getPlant());</span>
+
+		// if the user had default Station, set new default Station
+<span class="pc bpc" id="L229" title="2 of 4 branches missed.">		if (changeStationDTO.getStation() != null &amp;&amp; user.getStation() != null) {</span>
+<span class="fc" id="L230">			StationEntity newDefaultStation = new StationEntity();</span>
+<span class="fc" id="L231">			newDefaultStation.setStationPk(changeStationDTO.getStation());</span>
+<span class="fc" id="L232">			user.setStation(newDefaultStation);</span>
+		}
+
+<span class="fc" id="L235">		oAuthUserRepository.saveAndFlush(user);</span>
+
+<span class="fc" id="L237">		return createNewToken(oAuth2Authentication, user.getOauthGroups(), authorities, principal, user.getPlantId(),</span>
+<span class="fc" id="L238">				changeStationDTO.getStation());</span>
+
+	}
+
+	/**
+	 * Create new token
+	 * 
+	 * @param oAuth2Authentication
+	 * @param oauthGroups
+	 * @param authorities
+	 * @param principal
+	 * @param userPlant
+	 * @return new token
+	 */
+	private OAuth2AccessToken createNewToken(OAuth2Authentication oAuth2Authentication,
+			List&lt;OAuthGroupEntity&gt; oauthGroups, Collection&lt;? extends GrantedAuthority&gt; authorities, Principal principal,
+			String userPlantId, Integer stationId) {
+
+<span class="fc" id="L256">		log.fine(&quot;Creating new token&quot;);</span>
+
+		// set token validity seconds
+<span class="fc" id="L259">		tokenServices.setAccessTokenValiditySeconds(configProperties.getJwt().getTokenValiditySeconds());</span>
+
+<span class="fc" id="L261">		Set&lt;GrantedAuthority&gt; grantedAuthorities = new HashSet&lt;&gt;();</span>
+
+		// set privileges from old token
+<span class="fc bfc" id="L264" title="All 2 branches covered.">		for (GrantedAuthority auth : authorities) {</span>
+<span class="fc" id="L265">			grantedAuthorities.add(auth);</span>
+<span class="fc" id="L266">		}</span>
+
+		// set privileges in authorities
+<span class="fc" id="L269">		Set&lt;GrantedAuthority&gt; privileges = new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L270" title="All 2 branches covered.">		for (OAuthGroupEntity OAuthGroupEntity : oauthGroups) {</span>
+			// filter for Plant
+<span class="pc bpc" id="L272" title="1 of 2 branches missed.">			if (OAuthGroupEntity.getPlantId().equals(userPlantId)) {</span>
+<span class="nc bnc" id="L273" title="All 2 branches missed.">				for (PrivilegeEntity PrivilegeEntity : OAuthGroupEntity.getPrivileges()) {</span>
+<span class="nc" id="L274">					privileges.add(new SimpleGrantedAuthority(PrivilegeEntity.getPrivilegeId()));</span>
+<span class="nc" id="L275">				}</span>
+			}
+<span class="fc" id="L277">		}</span>
+<span class="fc" id="L278">		grantedAuthorities.addAll(privileges);</span>
+
+		// create OAuth2Request based on login request
+<span class="fc" id="L281">		OAuth2Request oauth2Request = new OAuth2Request(new HashMap&lt;String, String&gt;(),</span>
+<span class="fc" id="L282">				oAuth2Authentication.getOAuth2Request().getClientId(), grantedAuthorities, true,</span>
+<span class="fc" id="L283">				oAuth2Authentication.getOAuth2Request().getScope(),</span>
+<span class="fc" id="L284">				oAuth2Authentication.getOAuth2Request().getResourceIds(),</span>
+<span class="fc" id="L285">				oAuth2Authentication.getOAuth2Request().getRedirectUri(),</span>
+<span class="fc" id="L286">				oAuth2Authentication.getOAuth2Request().getResponseTypes(),</span>
+<span class="fc" id="L287">				oAuth2Authentication.getOAuth2Request().getExtensions());</span>
+<span class="fc" id="L288">		UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(principal,</span>
+				null, grantedAuthorities);
+
+		// create new OAuth2Authentication
+<span class="fc" id="L292">		OAuth2Authentication newOAuth2Authentication = new OAuth2Authentication(oauth2Request, authenticationToken);</span>
+
+<span class="fc" id="L294">		OAuth2AccessToken token = tokenServices.createAccessToken(newOAuth2Authentication);</span>
+
+		// add custom claim
+<span class="fc" id="L297">		Map&lt;String, Object&gt; additionalInfo = new HashMap&lt;&gt;();</span>
+<span class="pc bpc" id="L298" title="1 of 2 branches missed.">		if (userPlantId != null) {</span>
+<span class="fc" id="L299">			additionalInfo.put(&quot;plant&quot;, userPlantId);</span>
+		}
+<span class="pc bpc" id="L301" title="1 of 2 branches missed.">		if (stationId != null) {</span>
+<span class="fc" id="L302">			additionalInfo.put(&quot;station&quot;, stationId);</span>
+		}
+
+<span class="pc bpc" id="L305" title="1 of 2 branches missed.">		if (token != null) {</span>
+<span class="nc" id="L306">			((DefaultOAuth2AccessToken) token).setAdditionalInformation(additionalInfo);</span>
+		}
+		// create and return new token
+<span class="fc" id="L309">		return accessTokenConverter.enhance(token, newOAuth2Authentication);</span>
+	}
+
+	/**
+	 * Check old and new passwords, encodes and store data on db. Save in change
+	 * history
+	 * 
+	 * @param changePasswordDTO
+	 *            old password, new password and new password confirm
+	 * @param username
+	 */
+	@Transactional
+	public void changePassword(ChangePasswordDTO changePasswordDTO, String username) {
+
+<span class="fc" id="L323">		PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();</span>
+
+<span class="fc" id="L325">		OAuthUserEntity user = oAuthUserRepository.findByUsername(username);</span>
+
+		// old password not match with password stored on db
+<span class="fc bfc" id="L328" title="All 2 branches covered.">		if (!passwordEncoder.matches(changePasswordDTO.getOldPassword(), user.getPassword())) {</span>
+<span class="fc" id="L329">			throw MesApplicationException.builder()</span>
+<span class="fc" id="L330">					.exceptionInfo(</span>
+<span class="fc" id="L331">							UserDetailsServiceErrors.ChangePasswordErrors.OLD_PASSWORD_IS_WRONG.getExceptionInfo())</span>
+<span class="fc" id="L332">					.build();</span>
+		}
+
+		// new password doesn't match with new password confirm
+<span class="fc bfc" id="L336" title="All 2 branches covered.">		if (!changePasswordDTO.getNewPassword().equals(changePasswordDTO.getNewPasswordConfirm())) {</span>
+<span class="fc" id="L337">			throw MesApplicationException.builder()</span>
+<span class="fc" id="L338">					.exceptionInfo(</span>
+<span class="fc" id="L339">							UserDetailsServiceErrors.ChangePasswordErrors.NEW_PASSWORD_DOESNT_MATCH.getExceptionInfo())</span>
+<span class="fc" id="L340">					.build();</span>
+		}
+
+		// new password must satisfy regex
+<span class="fc bfc" id="L344" title="All 2 branches covered.">		if (!changePasswordDTO.getNewPassword().matches(PSW_REGEX)) {</span>
+<span class="fc" id="L345">			throw MesApplicationException.builder().exceptionInfo(</span>
+<span class="fc" id="L346">					UserDetailsServiceErrors.ChangePasswordErrors.PASSWORD_REGEX_NOT_SATISFIED.getExceptionInfo())</span>
+<span class="fc" id="L347">					.build();</span>
+		}
+
+<span class="fc" id="L350">		log.log(Level.FINE, &quot;Saving new password for user {0}&quot;, user.getUsername());</span>
+
+<span class="fc" id="L352">		user.setPassword(passwordEncoder.encode(changePasswordDTO.getNewPassword()));</span>
+<span class="fc" id="L353">		oAuthUserRepository.saveAndFlush(user);</span>
+
+<span class="fc" id="L355">		ChangeHistoryEntity changeHistory = new ChangeHistoryEntity();</span>
+<span class="fc" id="L356">		changeHistory.setEntity(OAuthUserEntity.class.getSimpleName());</span>
+<span class="fc" id="L357">		changeHistory.setUsername(username);</span>
+<span class="fc" id="L358">		changeHistory.setDateOperation(Timestamp.valueOf(GMTDateTime.now()));</span>
+<span class="fc" id="L359">		changeHistory.setPropertyChanged(&quot;password&quot;);</span>
+<span class="fc" id="L360">		changeHistory.setOldValue(user.getPassword());</span>
+<span class="fc" id="L361">		changeHistory.setNewValue(passwordEncoder.encode(changePasswordDTO.getNewPassword()));</span>
+
+<span class="fc" id="L363">		changeHistoryRepository.saveAndFlush(changeHistory);</span>
+<span class="fc" id="L364">		log.log(Level.FINE, &quot;Saved new password for user {0}&quot;, user.getUsername());</span>
+
+<span class="fc" id="L366">	}</span>
+
+	public interface UserDetailsServiceErrors {
+
+<span class="fc" id="L370">		@Getter</span>
+		public enum LoginErrors {
+<span class="fc" id="L372">			USER_NOT_ENABLED_CHANGE_STATION(&quot;USER_NOT_ENABLED_CHANGE_STATION&quot;, &quot;User is not enabled to change station&quot;);</span>
+
+<span class="fc" id="L374">			private LoginErrors(String code, String description) {</span>
+<span class="fc" id="L375">				exceptionInfo = new ExceptionInfo(code, description);</span>
+<span class="fc" id="L376">			}</span>
+
+<span class="fc" id="L378">			private ExceptionInfo exceptionInfo;</span>
+		}
+
+<span class="fc" id="L381">		@Getter</span>
+		public enum ChangePasswordErrors {
+<span class="fc" id="L383">			OLD_PASSWORD_IS_WRONG(&quot;OLD_PASSWORD_IS_WRONG&quot;, &quot;Old password is wrong&quot;), NEW_PASSWORD_DOESNT_MATCH(</span>
+					&quot;NEW_PASSWORD_DOESNT_MATCH&quot;,
+<span class="fc" id="L385">					&quot;New password doesn't match the confirm password&quot;), PASSWORD_REGEX_NOT_SATISFIED(</span>
+							&quot;PASSWORD_REGEX_NOT_SATISFIED&quot;,
+							&quot;Password must contain min 8 and max 12 characters, and at least: 1 upper case, 1 lower case and 1 digit&quot;);
+
+<span class="fc" id="L389">			private ChangePasswordErrors(String code, String description) {</span>
+<span class="fc" id="L390">				exceptionInfo = new ExceptionInfo(code, description);</span>
+<span class="fc" id="L391">			}</span>
+
+<span class="fc" id="L393">			private ExceptionInfo exceptionInfo;</span>
+		}
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.0.201801022044</span></div></body></html>

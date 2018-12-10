@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ServerSecurityConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mes-auth</a> &gt; <a href="index.source.html" class="el_package">com.aptar.mes.auth.config</a> &gt; <span class="el_source">ServerSecurityConfig.java</span></div><h1>ServerSecurityConfig.java</h1><pre class="source lang-java linenums">package com.aptar.mes.auth.config;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+/**
+ *
+ * @author AFIORE
+ * Created on 2018-05-29
+ */
+
+@Configuration
+@EnableWebSecurity
+@EnableGlobalMethodSecurity(prePostEnabled = true)
+@SpringBootApplication(exclude = { SecurityAutoConfiguration.class}) 
+<span class="nc" id="L30">public class ServerSecurityConfig extends WebSecurityConfigurerAdapter {</span>
+
+	@Autowired
+	private SecurityConfigProperties configProperties;	
+	
+	@Autowired
+	@Lazy
+	private UserDetailsService userDetailsService;
+
+	
+	@Bean
+	@Override
+	protected AuthenticationManager authenticationManager() throws Exception {
+<span class="nc" id="L43">		return super.authenticationManager();</span>
+	}
+
+	/*
+	 *  Client authentication configuration
+	 */
+	@Override
+	protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+<span class="nc" id="L51">		auth</span>
+<span class="nc" id="L52">        .userDetailsService(this.userDetailsService)</span>
+<span class="nc" id="L53">        .passwordEncoder(passwordEncoder());</span>
+<span class="nc" id="L54">	}</span>
+
+	@Bean
+	public PasswordEncoder passwordEncoder() {
+<span class="nc" id="L58">		return new BCryptPasswordEncoder();</span>
+	}
+
+	/*
+	 * Security configuration
+	 */
+	@Override
+	protected void configure(HttpSecurity httpSecurity) throws Exception {
+<span class="nc" id="L66">		httpSecurity</span>
+<span class="nc" id="L67">		.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)</span>
+<span class="nc" id="L68">		.and()</span>
+<span class="nc" id="L69">		.httpBasic().realmName(configProperties.getSecurityRealm())</span>
+<span class="nc" id="L70">		.and()</span>
+<span class="nc" id="L71">		.csrf().disable();</span>
+<span class="nc" id="L72">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.0.201801022044</span></div></body></html>

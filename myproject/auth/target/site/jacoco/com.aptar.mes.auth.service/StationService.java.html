@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StationService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mes-auth</a> &gt; <a href="index.source.html" class="el_package">com.aptar.mes.auth.service</a> &gt; <span class="el_source">StationService.java</span></div><h1>StationService.java</h1><pre class="source lang-java linenums">package com.aptar.mes.auth.service;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.aptar.mes.auth.repository.OAuthUserRepository;
+import com.aptar.mes.auth.repository.StationRepository;
+import com.aptar.mes.auth.service.dto.StationDTO;
+import com.aptar.mes.auth.service.dto.UserStationsDTO;
+import com.aptar.mes.common.exception.ExceptionInfo;
+import com.aptar.mes.common.exception.MesApplicationException;
+import com.aptar.mes.core.general.db.entity.OAuthUserEntity;
+import com.aptar.mes.core.general.db.entity.StationEntity;
+
+import lombok.Getter;
+import lombok.extern.java.Log;
+
+@Service
+<span class="fc" id="L21">@Log</span>
+/**
+ * This class implements the logic for Station
+ *
+ */
+<span class="fc" id="L26">public class StationService {</span>
+
+	@Autowired
+	StationRepository stationRepository;
+
+	@Autowired
+	OAuthUserRepository userRepository;
+
+
+	/**
+	 * Return station list associated with the user and plant
+	 * 
+	 * @return list associated with the user and plant
+	 */
+	public UserStationsDTO getStationList(String plantId, String username, boolean isEnabledChangeStation) {
+
+<span class="fc" id="L42">		log.fine(&quot;Finding entities on DB&quot;);</span>
+
+<span class="fc" id="L44">		UserStationsDTO userStationsDTO = new UserStationsDTO();</span>
+
+<span class="fc" id="L46">		OAuthUserEntity user = userRepository.findByUsername(username);</span>
+
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">		if(user != null) {</span>
+
+<span class="fc" id="L50">			List&lt;StationEntity&gt; stations = stationRepository.findByPlantId(plantId);</span>
+
+			// set stations
+<span class="fc bfc" id="L53" title="All 2 branches covered.">			for(StationEntity station: stations) {</span>
+<span class="fc" id="L54">				StationDTO stationDTO = new StationDTO();</span>
+<span class="fc" id="L55">				stationDTO.setId(station.getStationPk());</span>
+<span class="fc" id="L56">				stationDTO.setDescription(station.getName());</span>
+<span class="fc" id="L57">				userStationsDTO.getStations().add(stationDTO);</span>
+<span class="fc" id="L58">			}</span>
+
+			//set default station if it's present and if it's included in stations
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">			if(user.getStation() != null) {</span>
+<span class="fc" id="L62">				StationDTO defaultStation = new StationDTO();</span>
+<span class="fc" id="L63">				defaultStation.setId(user.getStation().getStationPk());</span>
+<span class="fc" id="L64">				defaultStation.setDescription(user.getStation().getName());</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">				if(userStationsDTO.getStations().contains(defaultStation)) {</span>
+<span class="fc" id="L66">					userStationsDTO.setDefaultStation(defaultStation);</span>
+				}
+			}
+
+			// view stations only if user is enabled to change station (show default station if it's present)
+<span class="pc bpc" id="L71" title="1 of 4 branches missed.">			if(!isEnabledChangeStation &amp;&amp; !userStationsDTO.getStations().isEmpty()) {</span>
+				// show default station in avalaible station
+<span class="nc bnc" id="L73" title="All 2 branches missed.">				if(userStationsDTO.getDefaultStation() != null) {</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">					userStationsDTO.getStations().removeIf(e -&gt; e.getId() != userStationsDTO.getDefaultStation().getId());</span>
+				} else {
+<span class="nc" id="L76">					userStationsDTO.getStations().clear();</span>
+				}
+			}
+
+			// User doesn't have a default station and is not enabled to change stations
+<span class="fc" id="L81">			checkStation(isEnabledChangeStation, userStationsDTO);</span>
+		}
+<span class="fc" id="L83">		return userStationsDTO;</span>
+	}
+
+	private void checkStation(boolean isEnabledChangeStation, UserStationsDTO userStationsDTO) {
+<span class="pc bpc" id="L87" title="2 of 6 branches missed.">		if(!isEnabledChangeStation &amp;&amp; userStationsDTO.getStations().isEmpty() &amp;&amp; userStationsDTO.getDefaultStation() == null) {</span>
+<span class="fc" id="L88">			throw MesApplicationException.builder().exceptionInfo(StationServiceErrors.StationErrors.PRIVILEGE_CONFLICT.getExceptionInfo()).build();</span>
+		}
+<span class="fc" id="L90">	}</span>
+
+	public interface StationServiceErrors{
+
+<span class="fc" id="L94">		@Getter</span>
+		public enum StationErrors{
+<span class="fc" id="L96">			PRIVILEGE_CONFLICT(&quot;PRIVILEGE_CONFLICT&quot;, &quot;User doesn't have a valid default station and isn't enabled to change station&quot;);</span>
+
+<span class="fc" id="L98">			private StationErrors(String code, String description) {</span>
+<span class="fc" id="L99">				exceptionInfo = new ExceptionInfo(code, description);</span>
+<span class="fc" id="L100">			}</span>
+
+<span class="fc" id="L102">			private ExceptionInfo exceptionInfo;</span>
+		}
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.0.201801022044</span></div></body></html>

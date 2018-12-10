@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OAuth2AuthorizationServerConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mes-auth</a> &gt; <a href="index.source.html" class="el_package">com.aptar.mes.auth.config</a> &gt; <span class="el_source">OAuth2AuthorizationServerConfig.java</span></div><h1>OAuth2AuthorizationServerConfig.java</h1><pre class="source lang-java linenums">package com.aptar.mes.auth.config;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.common.DefaultOAuth2AccessToken;
+import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
+import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
+import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
+import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
+import org.springframework.security.oauth2.provider.error.WebResponseExceptionTranslator;
+import org.springframework.security.oauth2.provider.token.DefaultTokenServices;
+import org.springframework.security.oauth2.provider.token.TokenEnhancer;
+import org.springframework.security.oauth2.provider.token.TokenEnhancerChain;
+import org.springframework.security.oauth2.provider.token.TokenStore;
+import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
+import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
+
+import com.aptar.mes.auth.service.dto.JwtUser;
+import com.aptar.mes.common.security.exception.MesSecurityExceptionTranslator;
+
+/**
+ *
+ * @author AFIORE
+ * Created on 2018-05-30
+ */
+
+@Configuration
+@EnableAuthorizationServer
+<span class="nc" id="L37">public class OAuth2AuthorizationServerConfig extends AuthorizationServerConfigurerAdapter {</span>
+
+	@Autowired
+	SecurityConfigProperties configProperties;
+	
+	@Autowired
+	private AuthenticationManager authenticationManager;
+
+	@Autowired
+	private TokenStore tokenStore;
+
+	@Autowired
+	private JwtAccessTokenConverter accessTokenConverter;
+	
+	@Autowired
+	private PasswordEncoder passwordEncoder;
+
+	
+	/*
+	 * OAuth2 resource client configuration
+	 */
+	@Override
+	public void configure(ClientDetailsServiceConfigurer configurer) throws Exception {
+<span class="nc" id="L60">		configurer</span>
+<span class="nc" id="L61">		.inMemory()</span>
+<span class="nc" id="L62">		.withClient(configProperties.getJwt().getClientId())</span>
+<span class="nc" id="L63">		.secret(passwordEncoder.encode(configProperties.getJwt().getClientSecret()))</span>
+<span class="nc" id="L64">		.authorizedGrantTypes(configProperties.getJwt().getGrantType())</span>
+<span class="nc" id="L65">		.authorities(&quot;OAUTH2_USER&quot;)</span>
+<span class="nc" id="L66">		.scopes(configProperties.getJwt().getScopeRead(), configProperties.getJwt().getScopeWrite())</span>
+<span class="nc" id="L67">		.accessTokenValiditySeconds(configProperties.getJwt().getTokenValiditySeconds())</span>
+<span class="nc" id="L68">		.resourceIds(configProperties.getJwt().getResourceIds());</span>
+<span class="nc" id="L69">	}</span>
+	
+	/*
+	 * Custom token response
+	 */
+	@Bean
+	public TokenEnhancer customTokenEnancherAuth() {
+<span class="nc" id="L76">		return (accessToken, authentication) -&gt; {</span>
+<span class="nc" id="L77">			Map&lt;String, Object&gt; additionalInfo = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L78">			JwtUser user = (JwtUser) authentication.getPrincipal();</span>
+<span class="nc" id="L79">			additionalInfo.put(&quot;password_expiring&quot;, user.isPasswordExpiring());</span>
+<span class="nc" id="L80">	        additionalInfo.put(&quot;user_expiring&quot;, user.isUserExpiring());</span>
+<span class="nc" id="L81">	        ((DefaultOAuth2AccessToken) accessToken).setAdditionalInformation(additionalInfo);</span>
+<span class="nc" id="L82">	        return accessToken;</span>
+		};
+	}
+	
+	
+	/*
+	 * JWT configuration
+	 */
+	@Override
+	public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+<span class="nc" id="L92">		TokenEnhancerChain enhancerChain = new TokenEnhancerChain();</span>
+<span class="nc" id="L93">		enhancerChain.setTokenEnhancers(Arrays.asList(customTokenEnancherAuth(), accessTokenConverter));</span>
+<span class="nc" id="L94">		endpoints</span>
+<span class="nc" id="L95">		.tokenStore(tokenStore)</span>
+<span class="nc" id="L96">		.tokenEnhancer(enhancerChain)</span>
+<span class="nc" id="L97">		.authenticationManager(authenticationManager)</span>
+<span class="nc" id="L98">		.exceptionTranslator(exceptionTranslator());</span>
+<span class="nc" id="L99">	}</span>
+	
+	@Bean
+	public WebResponseExceptionTranslator exceptionTranslator() {
+<span class="nc" id="L103">		return new MesSecurityExceptionTranslator();</span>
+	}
+
+	/*
+     * JTW token store configuration
+     */
+	@Bean
+	public TokenStore tokenStore() {
+<span class="nc" id="L111">		return new JwtTokenStore(accessTokenConverter());</span>
+	}
+	
+	/*
+     * JTW access token converter
+     */
+	@Bean
+	public JwtAccessTokenConverter accessTokenConverter() {
+<span class="nc" id="L119">		JwtAccessTokenConverter converter = new JwtAccessTokenConverter();</span>
+<span class="nc" id="L120">		converter.setSigningKey(configProperties.getJwt().getSigningKey());</span>
+<span class="nc" id="L121">		return converter;</span>
+	}
+
+	/*
+     * JTW token service configuration
+     */
+	@Bean
+	@Primary
+	public DefaultTokenServices tokenServices() {
+<span class="nc" id="L130">		DefaultTokenServices defaultTokenServices = new DefaultTokenServices();</span>
+<span class="nc" id="L131">		defaultTokenServices.setTokenStore(tokenStore());</span>
+<span class="nc" id="L132">		defaultTokenServices.setSupportRefreshToken(false);</span>
+<span class="nc" id="L133">		return defaultTokenServices;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.0.201801022044</span></div></body></html>
