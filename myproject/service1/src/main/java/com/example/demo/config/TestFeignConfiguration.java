@@ -15,6 +15,7 @@ public class TestFeignConfiguration {
 
 	@Autowired
 	SecurityConfigProperties configProperties;
+
 	
 	@Bean
 	RequestInterceptor oauth2FeignRequestInterceptor() {
@@ -34,5 +35,6 @@ public class TestFeignConfiguration {
 		resourceDetails.setScope(Arrays.asList(configProperties.getJwt().getScopeWrite()));
 		return resourceDetails;
 	}
+
 
 }
