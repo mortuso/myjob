@@ -4,6 +4,7 @@
      - **Eureka Server Discovery**
      - **Api Gateway Zuul**
      - **Rest Feign**
+     - **Spring Cloud Security**
 
 
 
@@ -12,7 +13,6 @@
 3. Ribbon
 4. Spring Cloud Sleuth
 5. Spring Cloud Stream
-6. Spring Cloud Security
 7. Archaius 
 8. Spring Cloud Task
 
