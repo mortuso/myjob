@@ -14,14 +14,15 @@ import com.example.demo.service.BookService;
 
 @RestController
 public class BookController {
-	
+
 	@Autowired
 	BookService bookService;
-	
+
 	@GetMapping(value="/books", produces=MediaType.APPLICATION_JSON_VALUE)
 	@ResponseStatus(value=HttpStatus.OK)
-	 public Collection<Book> books() {
+	public Collection<Book> books() {
 
 		return bookService.getBooks();
-	 }
+	}
+
 }

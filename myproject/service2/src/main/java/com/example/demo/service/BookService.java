@@ -27,5 +27,22 @@ public class BookService {
 		books.addAll(Arrays.asList(book1, book2));
 		return books;
 	}
+	
+public Collection<Book> getBooksAlternative(){
+		
+		Book book1 = new Book();
+		book1.setAuthor("Alessandro Manzoni");
+		book1.setId(1);
+		book1.setTitle("i promessi sposi");
+		
+		Book book2 = new Book();
+		book2.setAuthor("Ernest Hemingway");
+		book2.setId(2);
+		book2.setTitle("il vecchio e il mare");
+		
+		Collection<Book> books = new ArrayList<>();
+		books.addAll(Arrays.asList(book1, book2));
+		return books;
+	}
 
 }
