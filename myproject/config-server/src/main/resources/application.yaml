@@ -10,8 +10,6 @@ spring:
         git:
           uri: https://github.com/mortuso/myjob
           searchPaths: configuration
-          username: mortuso
-          password: ashita19.sk86roland
           cloneOnStart: true
 
 eureka:
