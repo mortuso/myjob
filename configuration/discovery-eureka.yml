@@ -1,0 +1,23 @@
+---
+server:
+  port: 8082
+spring:
+  profiles: discovery-eureka1
+eureka:
+  instance:
+    hostname: localhost
+  client:
+    serviceUrl:
+      defaultZone: http://discovery-eureka2/eureka/
+
+---
+server:
+  port: 8085
+spring:
+  profiles: discovery-eureka2
+eureka:
+  instance:
+    hostname: localhost
+  client:
+    serviceUrl:
+      defaultZone: http://discovery-eureka1/eureka/
