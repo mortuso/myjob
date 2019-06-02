@@ -2,37 +2,37 @@
 spring.profiles: discovery-eureka1
 
 eureka:
-	instance:
-		hostname: localhost #eureka-server
-	client:
-		serviceUrl:
-		defaultZone: http://discovery-eureka2:8085/eureka/
+  instance:
+    hostname: localhost #eureka-server
+  client:
+    serviceUrl:
+    defaultZone: http://discovery-eureka2:8085/eureka/
 
 server:
-port: 8082   # HTTP (Tomcat) port
+  port: 8082   # HTTP (Tomcat) port
 
 
 
 spring:
-application:
-name: discovery-eureka1
+  application:
+    name: discovery-eureka1
 ---
 
 spring.profiles: discovery-eureka2
 
 eureka:
-	instance:
-		hostname: localhost #eureka-server
-	client:
-		serviceUrl:
-		defaultZone: http://discovery-eureka1:8082/eureka/
+  instance:
+    hostname: localhost #eureka-server
+  client:
+    serviceUrl:
+        defaultZone: http://discovery-eureka1:8082/eureka/
 
 server:
-port: 8085  # HTTP (Tomcat) port
+  port: 8085  # HTTP (Tomcat) port
 
 
 
 spring:
-application:
-name: discovery-eureka2
+  application:
+    name: discovery-eureka2
 ---
