@@ -8,7 +8,7 @@ eureka:
     hostname: localhost
   client:
     serviceUrl:
-      defaultZone: http://discovery-eureka2/eureka/
+      defaultZone: http://localhost:8085/eureka/
 
 ---
 server:
@@ -20,4 +20,4 @@ eureka:
     hostname: localhost
   client:
     serviceUrl:
-      defaultZone: http://discovery-eureka1/eureka/
+      defaultZone: http://localhost:8082/eureka/
